@@ -3,7 +3,7 @@ import argparse
 import sys
 
 from config import ConfigError, load_config
-from graph import build_graph
+from graph import build_graph, find_reverse_deps
 from maven import MavenError, get_dependencies
 from repo_file import read_test_repo
 
@@ -13,6 +13,11 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description="Граф зависимостей Maven")
     parser.add_argument("config", help="путь к конфигу JSON")
+    parser.add_argument("--reverse", action="store_true",
+                        help="показать обратные зависимости пакета")
+    parser.add_argument("--target",
+                        help="для какого пакета искать обратные "
+                             "зависимости (по умолчанию - package)")
     return parser.parse_args()
 
 
@@ -48,10 +53,32 @@ def make_getter(config):
     return getter
 
 
+def load_graph(config, reverse):
+    """Строит граф зависимостей.
+
+    Для обратных зависимостей в тестовом режиме берётся весь
+    тестовый репозиторий, чтобы были видны все пакеты.
+    """
+    if reverse and config["test_mode"]:
+        return read_test_repo(config["repository"])
+    getter = make_getter(config)
+    return build_graph(config["package"], getter, config["max_depth"])
+
+
 def print_graph(graph):
     """Печатает граф: пакет и список его зависимостей."""
     for node, deps in graph.items():
         print(f"{node}: {' '.join(deps)}".rstrip())
+
+
+def show_reverse(config, graph, target):
+    """Печатает пакеты, которые зависят от target."""
+    print(f"Обратные зависимости пакета {target}:")
+    names = find_reverse_deps(graph, target, config["max_depth"])
+    for name in names:
+        print(name)
+    if not names:
+        print("(нет)")
 
 
 def main():
@@ -59,12 +86,14 @@ def main():
     args = parse_args()
     try:
         config = load_config(args.config)
-        getter = make_getter(config)
-        graph = build_graph(config["package"], getter, config["max_depth"])
+        graph = load_graph(config, args.reverse)
     except (ConfigError, MavenError, OSError) as error:
         print(f"Ошибка: {error}", file=sys.stderr)
         return 1
-    print_graph(graph)
+    if args.reverse:
+        show_reverse(config, graph, args.target or config["package"])
+    else:
+        print_graph(graph)
     return 0
 
 

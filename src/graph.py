@@ -1,4 +1,4 @@
-"""Построение графа зависимостей."""
+"""Построение графа зависимостей и обратные зависимости."""
 from collections import deque
 
 
@@ -25,3 +25,26 @@ def build_graph(start, get_deps, max_depth):
                 visited.add(dep)
                 queue.append((dep, depth + 1))
     return graph
+
+
+def reverse_graph(graph):
+    """Переворачивает граф: пакет -> те, кто от него зависит."""
+    result = {}
+    for node, deps in graph.items():
+        for dep in deps:
+            result.setdefault(dep, []).append(node)
+    return result
+
+
+def find_reverse_deps(graph, target, max_depth):
+    """Находит все пакеты, которые зависят от target.
+
+    Для обхода используется тот же алгоритм BFS.
+    """
+    reversed_graph = reverse_graph(graph)
+
+    def get_parents(node):
+        return reversed_graph.get(node, [])
+
+    found = build_graph(target, get_parents, max_depth)
+    return [node for node in found if node != target]
