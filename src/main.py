@@ -67,11 +67,19 @@ def load_graph(config, reverse):
 
 
 def show_graph(config, graph):
-    """Печатает граф на языке D2 и, если нужно, ASCII-дерево."""
-    print(to_d2(graph))
+    d2_text = to_d2(graph)
+
+    print("=== D2 ===")
+    print(d2_text)
+
+    with open("graph.d2", "w", encoding="utf-8") as file:
+        file.write(d2_text)
+
     if config["ascii_tree"]:
+        tree = ascii_tree(graph, config["package"])
         print()
-        print(ascii_tree(graph, config["package"]))
+        print("=== ASCII TREE ===")
+        print(tree)
 
 
 def show_reverse(config, graph, target):
