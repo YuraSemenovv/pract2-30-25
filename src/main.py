@@ -5,6 +5,7 @@ import sys
 from config import ConfigError, load_config
 from graph import build_graph, find_reverse_deps
 from maven import MavenError, get_dependencies
+from output import ascii_tree, to_d2
 from repo_file import read_test_repo
 
 
@@ -65,10 +66,12 @@ def load_graph(config, reverse):
     return build_graph(config["package"], getter, config["max_depth"])
 
 
-def print_graph(graph):
-    """Печатает граф: пакет и список его зависимостей."""
-    for node, deps in graph.items():
-        print(f"{node}: {' '.join(deps)}".rstrip())
+def show_graph(config, graph):
+    """Печатает граф на языке D2 и, если нужно, ASCII-дерево."""
+    print(to_d2(graph))
+    if config["ascii_tree"]:
+        print()
+        print(ascii_tree(graph, config["package"]))
 
 
 def show_reverse(config, graph, target):
@@ -93,7 +96,7 @@ def main():
     if args.reverse:
         show_reverse(config, graph, args.target or config["package"])
     else:
-        print_graph(graph)
+        show_graph(config, graph)
     return 0
 
 
