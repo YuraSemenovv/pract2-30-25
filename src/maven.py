@@ -1,6 +1,6 @@
 """Получение зависимостей из pom-файлов репозитория Maven."""
 import urllib.request
-import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as element_tree
 
 TIMEOUT = 10
 PARTS_COUNT = 3
@@ -40,8 +40,8 @@ def download(url):
 def parse_xml(text):
     """Разбирает pom и убирает пространство имён из названий тегов."""
     try:
-        root = ET.fromstring(text)
-    except ET.ParseError as error:
+        root = element_tree.fromstring(text)
+    except element_tree.ParseError as error:
         raise MavenError(f"неверный pom-файл: {error}")
     for element in root.iter():
         element.tag = element.tag.split("}")[-1]
